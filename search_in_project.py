@@ -61,7 +61,7 @@ class SearchInProjectCommand(sublime_plugin.WindowCommand):
             self.results = self.engine.run(text, folders)
             if self.results:
                 self.results = [[result[0].replace(self.common_path.replace('\"', ''), ''), result[1]] for result in self.results]
-                self.window.show_quick_panel(self.results, self.goto_result)
+                self.window.show_quick_panel(self.results, self.open_result, 0, 0, self.preview_result)
             else:
                 self.results = []
                 sublime.message_dialog('No results')
@@ -69,13 +69,17 @@ class SearchInProjectCommand(sublime_plugin.WindowCommand):
             self.results = []
             sublime.error_message("%s running search engine %s:"%(e.__class__.__name__,self.engine_name) + "\n" + str(e))
 
-
-    def goto_result(self, file_no):
+    # Open file (and seeking to proper position) corresponding with result file index
+    def open_result(self, file_no, open_file_flags = sublime.ENCODED_POSITION):
         if file_no != -1:
             file_name = self.common_path.replace('\"', '') + self.results[file_no][0]
-            view = self.window.open_file(file_name, sublime.ENCODED_POSITION)
+            view = self.window.open_file(file_name, open_file_flags)
             regions = view.find_all(self.last_search_string)
             view.add_regions("search_in_project", regions, "entity.name.filename.find-in-files", "circle", sublime.DRAW_OUTLINED)
+
+    # Preview file (and seeking to proper position) corresponding with result file index
+    def preview_result(self, file_no):
+        self.open_result(file_no, sublime.ENCODED_POSITION | sublime.TRANSIENT)
 
     def search_folders(self):
         search_folders = self.window.folders()
